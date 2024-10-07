@@ -28,6 +28,7 @@ fn count_for(map: &HashMap<String, Progress>, value: Progress) -> usize {
 fn count_iterator(map: &HashMap<String, Progress>, value: Progress) -> usize {
     // `map` is a hash map with `String` keys and `Progress` values.
     // map = { "variables1": Complete, "from_str": None, … }
+    map.iter().filter(|(_, &val)| val == value).count()
 }
 
 fn count_collection_for(collection: &[HashMap<String, Progress>], value: Progress) -> usize {
@@ -48,10 +49,74 @@ fn count_collection_iterator(collection: &[HashMap<String, Progress>], value: Pr
     // `collection` is a slice of hash maps.
     // collection = [{ "variables1": Complete, "from_str": None, … },
     //               { "variables2": Complete, … }, … ]
+    collection
+        .iter()
+        .map(|map| count_iterator(map, value))
+        .sum()
 }
 
 fn main() {
     // You can optionally experiment here.
+    let map = {
+        use Progress::*;
+
+        let mut map = HashMap::new();
+        map.insert(String::from("variables1"), Complete);
+        map.insert(String::from("functions1"), Complete);
+        map.insert(String::from("hashmap1"), Complete);
+        map.insert(String::from("arc1"), Some);
+        map.insert(String::from("as_ref_mut"), None);
+        map.insert(String::from("from_str"), None);
+
+        map
+    };
+    let collection = vec![
+        {
+            let mut map = HashMap::new();
+            map.insert(String::from("variables1"), Progress::Complete);
+            map.insert(String::from("functions1"), Progress::Complete);
+            map.insert(String::from("hashmap1"), Progress::Complete);
+            map.insert(String::from("arc1"), Progress::Some);
+            map.insert(String::from("as_ref_mut"), Progress::None);
+            map.insert(String::from("from_str"), Progress::None);
+            map
+        },
+        {
+            let mut map = HashMap::new();
+            map.insert(String::from("variables2"), Progress::Complete);
+            map.insert(String::from("functions2"), Progress::Complete);
+            map.insert(String::from("if1"), Progress::Complete);
+            map.insert(String::from("from_into"), Progress::None);
+            map.insert(String::from("try_from_into"), Progress::None);
+            map
+        },
+    ];
+
+    println!(
+        "Count of Complete in map: {}",
+        count_iterator(&map, Progress::Complete)
+    );
+    println!(
+        "Count of Some in map: {}",
+        count_iterator(&map, Progress::Some)
+    );
+    println!(
+        "Count of None in map: {}",
+        count_iterator(&map, Progress::None)
+    );
+
+    println!(
+        "Count of Complete in collection: {}",
+        count_collection_iterator(&collection, Progress::Complete)
+    );
+    println!(
+        "Count of Some in collection: {}",
+        count_collection_iterator(&collection, Progress::Some)
+    );
+    println!(
+        "Count of None in collection: {}",
+        count_collection_iterator(&collection, Progress::None)
+    );
 }
 
 #[cfg(test)]
